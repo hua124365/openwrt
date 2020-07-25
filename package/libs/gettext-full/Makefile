@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gettext-full
 PKG_VERSION:=0.19.8.1
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=gettext-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gettext
@@ -69,8 +69,8 @@ HOST_CONFIGURE_ARGS += \
 	--disable-native-java \
 	--disable-openmp \
 	--without-emacs \
-	--without-libxml2-prefix
-
+	--without-libxml2-prefix \
+	--with-included-glib
 
 HOST_CONFIGURE_VARS += \
 	EMACS="no" \
