@@ -6,31 +6,31 @@ on:
     branches: [master]
 jobs:
   determine_affects_tools:
-    name: Determine tools/ affected
+    name: Determine if tools are affected
     runs-on: ubuntu-latest
     outputs:
-      target: ${{ steps.affects_check.outputs.affects_tools}}
+      affects_tools: ${{ steps.affects_check.outputs.affects_tools}}
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        ref: ${{ github.event.pull_request.head.sha }}
+      uses: actions/checkout@v1
 
     - name: Affects check
       id: affects_check
       run: |
-        AFFECTS=$(git diff --name-only origin/master... | grep -q \
+        AFFECTS=$(git diff origin/master HEAD --name-only | grep -q \
           -e "^Makefile/" \
           -e "^config/" \
           -e "^include/" \
           -e "^tools/" \
-          &amp&amp echo "true" || echo "false")
+          && echo "true" || echo "false")
         echo "::set-output name=affects_tools::$AFFECTS"
+        echo $AFFECTS
 
   macos:
+    name: Compile Host Tools on MacOS
     needs: determine_affects_tools
-    if: needs.determine_affects_tools.outputs.affects_tools == "true"
+    if: needs.determine_affects_tools.outputs.affects_tools == 'true'
     runs-on: macOS-latest
     steps:
       - name: Checkout
@@ -74,8 +74,9 @@ jobs:
           path: logs/
 
   linux:
+    name: Compile Host Tools on Linux
     needs: determine_affects_tools
-    if: needs.determine_affects_tools.outputs.affects_tools == "true"
+    if: needs.determine_affects_tools.outputs.affects_tools == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
