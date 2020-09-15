@@ -18,6 +18,7 @@ IB_KDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(KERNEL_BUILD_DIR))
 IB_LDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(LINUX_DIR))
 IB_DTSDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(LINUX_DIR))/arch/$(LINUX_KARCH)/boot/dts/
 IB_IDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(STAGING_DIR_IMAGE))
+FIND_KMODS:=$(if $(CONFIG_BUILDBOT),,-or -name 'kmod-*.ipk')
 
 all: compile
 
@@ -47,7 +48,7 @@ endif
 	$(VERSION_SED_SCRIPT) $(PKG_BUILD_DIR)/repositories.conf
 
 ifeq ($(CONFIG_IB_STANDALONE),)
-	(cd $(call FeedPackageDir,libc); $(FIND) -type f -name 'libc_*.ipk' -or -name 'kernel_*.ipk' -or -name 'kmod-*.ipk') | \
+	(cd $(call FeedPackageDir,libc); $(FIND) -type f -name 'libc_*.ipk' -or -name 'kernel_*.ipk' $(FIND_KMODS)) | \
 		while read path; do \
 			mkdir -p "$(PKG_BUILD_DIR)/packages/$${path%/*}"; \
 			cp "$(call FeedPackageDir,libc)/$$path" "$(PKG_BUILD_DIR)/packages/$$path"; \
