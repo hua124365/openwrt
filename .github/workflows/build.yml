@@ -1,8 +1,9 @@
 name: Build OpenWrt snapshot
 
-on:
-  schedule:
-    - cron: "0 4 * * *"
+on: [push]
+#on:
+#  schedule:
+#    - cron: "0 4 * * *"
 
 jobs:
   determine_targets:
@@ -40,13 +41,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: False
-      matrix: ${{fromJson(needs.determine_targets.outputs.targets)}}
+      matrix:
+        targets:
+          - "x86/64"
+          - "ath79/generic"
+      #matrix: ${{fromJson(needs.determine_targets.outputs.targets)}}
 
     steps:
     - name: Checkout
       uses: actions/checkout@v2
       with:
-        repository: "openwrt/openwrt"
         fetch-depth: 0
 
     - name: Cache sources
@@ -76,10 +80,10 @@ jobs:
         cat <<EOT >> .config
         CONFIG_TARGET_${TARGET}=y
         CONFIG_TARGET_${TARGET}_${SUBTARGET}=y
-        CONFIG_ALL_KMODS=y
-        CONFIG_ALL_NONSHARED=y
+        #CONFIG_ALL_KMODS=y
+        #CONFIG_ALL_NONSHARED=y
         CONFIG_AUTOREMOVE=y
-        CONFIG_BUILDBOT=y
+        #CONFIG_BUILDBOT=y
         CONFIG_BUILD_LOG=y
         CONFIG_COLLECT_KERNEL_DEBUG=y
         CONFIG_DEVEL=y
@@ -91,6 +95,10 @@ jobs:
         CONFIG_TARGET_ALL_PROFILES=y
         CONFIG_TARGET_MULTI_PROFILE=y
         CONFIG_TARGET_PER_DEVICE_ROOTFS=y
+        CONFIG_TARGET_ROOTFS_SECURITY_LABELS=y
+        CONFIG_KERNEL_SECURITY_SELINUX=y
+        CONFIG_PACKAGE_busybox-selinux=y
+        CONFIG_PACKAGE_procd-selinux=y
         EOT
 
         echo -e "\n---- config input ----\n"
@@ -220,7 +228,7 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_S3_ENDPOINT: https://images.aparcar.org
         SOURCE_DIR: bin/targets/${{ matrix.targets }}
-        DEST_DIR: ${{ matrix.targets }}
+        DEST_DIR: selinux/${{ matrix.targets }}
 
     - name: Prepare upload of kmods
       run: |
@@ -238,4 +246,4 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_S3_ENDPOINT: https://images.aparcar.org
         SOURCE_DIR: bin/targets/${{ matrix.targets }}/kmods/${{ env.kernel_version }}/
-        DEST_DIR: ${{ matrix.targets }}/kmods/${{ env.kernel_version }}/
+        DEST_DIR: selinux/${{ matrix.targets }}/kmods/${{ env.kernel_version }}/

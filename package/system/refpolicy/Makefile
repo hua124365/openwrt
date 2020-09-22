@@ -14,6 +14,7 @@ PKG_SOURCE_URL:=https://github.com/SELinuxProject/refpolicy/releases/download/RE
 PKG_HASH:=dec854512ed00cd057408f330c2cea4de7a4405f7a147458f59c994bf578e4b0
 PKG_INSTALL:=1
 PKG_BUILD_DEPENDS:=checkpolicy/host policycoreutils/host
+HOST_BUILD_DEPENDS:=checkpolicy/host policycoreutils/host
 
 PKG_MAINTAINER:=Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 PKG_CPE_ID:=cpe:/a:tresys:refpolicy
