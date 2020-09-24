@@ -1,0 +1,28 @@
+name: Publish Docker image
+
+on: [push]
+
+jobs:
+  push_to_registry:
+    name: Push Docker image to GitHub Packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+
+      - name: Move files in place
+        run: |
+          mkdir -p build/
+          wget https://downloads.openwrt.org/snapshots/targets/ath79/generic/openwrt-sdk-ath79-generic_gcc-8.4.0_musl.Linux-x86_64.tar.xz -O build/sdk.tar.gz
+          cp .github/Dockerfile build/
+
+      - name: Push to GitHub Packages
+        uses: docker/build-push-action@v1
+        with:
+          path: ./build
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: docker.pkg.github.com
+          repository: aparcar/openwrt/sdk-nls
+          tag_with_ref: true
+
