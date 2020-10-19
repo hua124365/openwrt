@@ -1,0 +1,46 @@
+From 9ef886819dd48303d8ced4cdbc9afbf32682535c Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 19 Oct 2020 16:18:22 +0100
+Subject: [PATCH] logd: self-degrade to 'logd' user after opening pipes
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ log/logd.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/log/logd.c b/log/logd.c
+index 18788fe..7d53139 100644
+--- a/log/logd.c
++++ b/log/logd.c
+@@ -11,6 +11,8 @@
+  * GNU General Public License for more details.
+  */
+ 
++#include <sys/types.h>
++#include <pwd.h>
+ #include <stdio.h>
+ #include <unistd.h>
+ #include <syslog.h>
+@@ -238,6 +240,7 @@ int
+ main(int argc, char **argv)
+ {
+ 	int ch, log_size = 16;
++	struct passwd *p = NULL;
+ 
+ 	signal(SIGPIPE, SIG_IGN);
+ 	while ((ch = getopt(argc, argv, "S:")) != -1) {
+@@ -255,6 +258,11 @@ main(int argc, char **argv)
+ 	log_init(log_size);
+ 	conn.cb = ubus_connect_handler;
+ 	ubus_auto_connect(&conn);
++	p = getpwnam("logd");
++	if (p) {
++		setuid(p->pw_uid);
++		setgid(p->pw_gid);
++	}
+ 	uloop_run();
+ 	log_shutdown();
+ 	uloop_done();
+-- 
+2.28.0
+

@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ubox
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/ubox.git
@@ -44,6 +44,7 @@ define Package/logd
   CATEGORY:=Base system
   DEPENDS:=+libubox +libubus +libblobmsg-json +USE_GLIBC:librt
   TITLE:=OpenWrt system log implementation
+  USERID:=logd=514:logd=514
 endef
 
 define Package/getrandom/install
