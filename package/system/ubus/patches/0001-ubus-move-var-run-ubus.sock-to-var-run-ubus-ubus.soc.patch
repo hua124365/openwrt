@@ -1,0 +1,28 @@
+From 13a4438b4ebdf85d301999e0a615640ac4c9b0a8 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 19 Oct 2020 15:14:47 +0100
+Subject: [PATCH] ubus: move /var/run/ubus.sock to /var/run/ubus/ubus.sock
+
+This makes it possible to run ubus as non-root.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5c0f760..117f0a3 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -13,7 +13,7 @@ OPTION(BUILD_LUA "build Lua plugin" ON)
+ OPTION(BUILD_EXAMPLES "build examples" ON)
+ 
+ SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
+-SET(UBUS_UNIX_SOCKET "/var/run/ubus.sock")
++SET(UBUS_UNIX_SOCKET "/var/run/ubus/ubus.sock")
+ SET(UBUS_MAX_MSGLEN 1048576)
+ 
+ ADD_DEFINITIONS( -DUBUS_UNIX_SOCKET="${UBUS_UNIX_SOCKET}")
+-- 
+2.28.0
+

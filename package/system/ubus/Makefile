@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ubus
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/ubus.git
@@ -24,6 +24,7 @@ define Package/ubus
   CATEGORY:=Base system
   DEPENDS:=+libubus +libblobmsg-json +ubusd
   TITLE:=OpenWrt RPC client utility
+  USERID:=ubus=81:ubus=81
 endef
 
 define Package/ubusd
