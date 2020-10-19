@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
 PKG_VERSION:=1.31.1
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -50,6 +50,9 @@ define Package/busybox/Default
   TITLE:=Core utilities for embedded Linux
   URL:=http://busybox.net/
   DEPENDS:=+BUSYBOX_CONFIG_PAM:libpam +BUSYBOX_CONFIG_NTPD:jsonfilter
+ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_NTPD),)
+  USERID:=ntpd=123:ntpd=123
+endif
 endef
 
 define Package/busybox
@@ -144,6 +147,8 @@ endif
 ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_NTPD),)
 	$(INSTALL_BIN) ./files/sysntpd $(1)/etc/init.d/sysntpd
 	$(INSTALL_BIN) ./files/ntpd-hotplug $(1)/usr/sbin/ntpd-hotplug
+	$(INSTALL_DIR) $(1)/etc/capabilities/
+	$(INSTALL_DATA) ./files/ntpd.json $(1)/etc/capabilities/
 endif
 	-rm -rf $(1)/lib64
 endef
