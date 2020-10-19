@@ -1,0 +1,152 @@
+From 68744c8a656f7a47e7a3eccab8565182fa5ae2d9 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 19 Oct 2020 19:30:13 +0100
+Subject: [PATCH 7/7] jail: capabilities: apply in two phases
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ jail/capabilities.c | 16 +++++++---------
+ jail/capabilities.h |  2 +-
+ jail/jail.c         | 29 ++++++++++++++++++++++-------
+ 3 files changed, 30 insertions(+), 17 deletions(-)
+
+diff --git a/jail/capabilities.c b/jail/capabilities.c
+index 2eb154e..2ce1733 100644
+--- a/jail/capabilities.c
++++ b/jail/capabilities.c
+@@ -117,7 +117,7 @@ int parseOCIcapabilities(struct jail_capset *capset, struct blob_attr *msg)
+ }
+ 
+ 
+-int applyOCIcapabilities(struct jail_capset ocicapset)
++int applyOCIcapabilities(struct jail_capset ocicapset, uint64_t retain)
+ {
+ 	struct __user_cap_header_struct uh = {};
+ 	struct __user_cap_data_struct ud;
+@@ -137,7 +137,7 @@ int applyOCIcapabilities(struct jail_capset ocicapset)
+ 
+ 				continue;
+ 			}
+-			if ( (ocicapset.bounding & (1LLU << cap)) == 0) {
++			if ( ((ocicapset.bounding | retain) & (1LLU << cap)) == 0) {
+ 				DEBUG("dropping capability %s (%d) from bounding set\n", capabilities_names[cap], cap);
+ 				if (prctl(PR_CAPBSET_DROP, cap, 0, 0, 0)) {
+ 					ERROR("prctl(PR_CAPBSET_DROP, %d) failed: %m\n", cap);
+@@ -161,13 +161,13 @@ int applyOCIcapabilities(struct jail_capset ocicapset)
+ 	DEBUG("old capabilities: Pe=%08x Pp=%08x Pi=%08x\n", ud.effective, ud.permitted, ud.inheritable);
+ 
+ 	if (ocicapset.effective != JAIL_CAP_ALL)
+-		ud.effective = ocicapset.effective;
++		ud.effective = ocicapset.effective | retain;
+ 
+ 	if (ocicapset.permitted != JAIL_CAP_ALL)
+-		ud.permitted = ocicapset.permitted;
++		ud.permitted = ocicapset.permitted | retain;
+ 
+ 	if (ocicapset.inheritable != JAIL_CAP_ALL)
+-		ud.inheritable = ocicapset.inheritable;
++		ud.inheritable = ocicapset.inheritable | retain;
+ 
+ 	DEBUG("new capabilities: Pe=%08x Pp=%08x Pi=%08x\n", ud.effective, ud.permitted, ud.inheritable);
+ 
+@@ -181,7 +181,7 @@ int applyOCIcapabilities(struct jail_capset ocicapset)
+ 		for (cap = 0; cap <= CAP_LAST_CAP; cap++) {
+ 			is_set = prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_IS_SET, cap, 0, 0);
+ 			if ( (ocicapset.ambient & (1LLU << cap)) == 0) {
+-				if (is_set) {
++				if (is_set && !((1LLU << cap) & retain)) {
+ 					DEBUG("dropping capability %s (%d) from ambient set\n", capabilities_names[cap], cap);
+ 					if (prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_LOWER, cap, 0, 0)) {
+ 						ERROR("prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_LOWER, %d, 0, 0) failed: %m\n", cap);
+@@ -189,7 +189,7 @@ int applyOCIcapabilities(struct jail_capset ocicapset)
+ 					}
+ 				}
+ 			} else {
+-				if (!is_set) {
++				if (!is_set || ((1LLU << cap) && retain)) {
+ 					DEBUG("raising capability %s (%d) to ambient set\n", capabilities_names[cap], cap);
+ 					if (prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, cap, 0, 0)) {\
+ 						ERROR("prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, %d, 0, 0) failed: %m\n", cap);
+@@ -208,8 +208,6 @@ int parseOCIcapabilities_from_file(struct jail_capset *capset, const char *file)
+ 	struct blob_buf b = { 0 };
+ 	int ret;
+ 
+-	DEBUG("dropping capabilities\n");
+-
+ 	blob_buf_init(&b, 0);
+ 	ret = !blobmsg_add_json_from_file(&b, file);
+ 	if (ret) {
+diff --git a/jail/capabilities.h b/jail/capabilities.h
+index 7185fd4..d8c6b8d 100644
+--- a/jail/capabilities.h
++++ b/jail/capabilities.h
+@@ -27,7 +27,7 @@ struct jail_capset {
+ 
+ int parseOCIcapabilities(struct jail_capset *capset, struct blob_attr *msg);
+ int parseOCIcapabilities_from_file(struct jail_capset *capset, const char *file);
+-int applyOCIcapabilities(struct jail_capset capset);
++int applyOCIcapabilities(struct jail_capset capset, uint64_t retain);
+ 
+ /* capget/capset syscall wrappers are provided by libc */
+ extern int capget(cap_user_header_t header, cap_user_data_t data);
+diff --git a/jail/jail.c b/jail/jail.c
+index ede0944..08e95e9 100644
+--- a/jail/jail.c
++++ b/jail/jail.c
+@@ -42,6 +42,7 @@
+ #include <linux/filter.h>
+ #include <linux/limits.h>
+ #include <linux/nsfs.h>
++#include <linux/securebits.h>
+ #include <signal.h>
+ #include <inttypes.h>
+ 
+@@ -1172,15 +1173,20 @@ static void post_jail_fs(void)
+ 
+ static void post_start_hook(void)
+ {
+-	if (applyOCIcapabilities(opts.capset))
++	int pw_uid, pw_gid, gr_gid;
++
++	if (prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP)) {
++		ERROR("prctl(PR_SET_SECUREBITS) failed: %m\n");
+ 		exit(EXIT_FAILURE);
++	}
+ 
+-	if (!(opts.namespace & CLONE_NEWUSER) && (opts.setns.user == -1)) {
+-		int pw_uid, pw_gid, gr_gid;
+-		get_jail_user(&pw_uid, &pw_gid, &gr_gid);
++	/* drop capabilities, retain those still needed to further setup jail */
++	if (applyOCIcapabilities(opts.capset, (1LLU << CAP_SETGID) | (1LLU << CAP_SETUID) | (1LLU << CAP_SETPCAP)))
++		exit(EXIT_FAILURE);
+ 
+-		set_jail_user(opts.pw_uid?:pw_uid, opts.pw_gid?:pw_gid, opts.gr_gid?:gr_gid);
+-	}
++	/* use either cmdline-supplied user/group or uid/gid from OCI spec */
++	get_jail_user(&pw_uid, &pw_gid, &gr_gid);
++	set_jail_user(opts.pw_uid?:pw_uid, opts.pw_gid?:pw_gid, opts.gr_gid?:gr_gid);
+ 
+ 	if (opts.additional_gids &&
+ 	    (setgroups(opts.num_additional_gids, opts.additional_gids) < 0)) {
+@@ -1191,8 +1197,17 @@ static void post_start_hook(void)
+ 	if (opts.set_umask)
+ 		umask(opts.umask);
+ 
++	if (prctl(PR_SET_SECUREBITS, 0)) {
++		ERROR("prctl(PR_SET_SECUREBITS) failed: %m\n");
++		exit(EXIT_FAILURE);
++	}
++
++	/* drop remaining capabilities to end up with specified sets */
++	if (applyOCIcapabilities(opts.capset, 0))
++		exit(EXIT_FAILURE);
++
+ 	if (opts.no_new_privs && prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) {
+-                ERROR("prctl(PR_SET_NO_NEW_PRIVS) failed: %m\n");
++		ERROR("prctl(PR_SET_NO_NEW_PRIVS) failed: %m\n");
+ 		exit(EXIT_FAILURE);
+ 	}
+ 
+-- 
+2.28.0
+

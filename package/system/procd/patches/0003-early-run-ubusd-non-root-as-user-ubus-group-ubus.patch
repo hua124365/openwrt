@@ -1,0 +1,88 @@
+From 31214674545c3703c1171a02a1949a5d3162bdee Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 19 Oct 2020 13:43:23 +0100
+Subject: [PATCH 3/7] early: run ubusd non-root as user ubus, group ubus
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ service/service.c | 7 ++++++-
+ service/service.h | 2 +-
+ state.c           | 9 ++++++++-
+ 3 files changed, 15 insertions(+), 3 deletions(-)
+
+diff --git a/service/service.c b/service/service.c
+index cabc69c..b3286dc 100644
+--- a/service/service.c
++++ b/service/service.c
+@@ -972,7 +972,7 @@ static struct ubus_object main_object = {
+ };
+ 
+ int
+-service_start_early(char *name, char *cmdline)
++service_start_early(char *name, char *cmdline, char *user, char *group)
+ {
+ 	void *instances, *instance, *command, *respawn;
+ 	char *t;
+@@ -993,6 +993,11 @@ service_start_early(char *name, char *cmdline)
+ 	blobmsg_add_string(&b, NULL, "1");
+ 	blobmsg_add_string(&b, NULL, "0");
+ 	blobmsg_close_array(&b, respawn);
++	if (user)
++		blobmsg_add_string(&b, "user", user);
++	if (group)
++		blobmsg_add_string(&b, "group", group);
++
+ 	blobmsg_close_table(&b, instance);
+ 	blobmsg_close_table(&b, instances);
+ 
+diff --git a/service/service.h b/service/service.h
+index fac5da9..48157cc 100644
+--- a/service/service.h
++++ b/service/service.h
+@@ -55,7 +55,7 @@ struct service {
+ void service_validate_add(struct service *s, struct blob_attr *attr);
+ void service_validate_dump(struct blob_buf *b, struct service *s);
+ void service_validate_dump_all(struct blob_buf *b, char *p, char *s);
+-int service_start_early(char *name, char *cmdline);
++int service_start_early(char *name, char *cmdline, char *user, char *group);
+ void service_stopped(struct service *s);
+ void service_validate_del(struct service *s);
+ void service_event(const char *type, const char *service, const char *instance);
+diff --git a/state.c b/state.c
+index e117ea3..6ca1d5e 100644
+--- a/state.c
++++ b/state.c
+@@ -13,6 +13,7 @@
+  */
+ 
+ #include <fcntl.h>
++#include <pwd.h>
+ #include <sys/reboot.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -125,6 +126,7 @@ static void perform_halt()
+ static void state_enter(void)
+ {
+ 	char ubus_cmd[] = "/sbin/ubusd";
++	struct passwd *p;
+ 
+ 	switch (state) {
+ 	case STATE_EARLY:
+@@ -139,8 +141,13 @@ static void state_enter(void)
+ 		watchdog_init(0);
+ 		set_stdio("console");
+ 		LOG("- ubus -\n");
++		p = getpwnam("ubus");
++		if (p) {
++			mkdir(p->pw_dir, 0755);
++			chown(p->pw_dir, p->pw_uid, p->pw_gid);
++		}
+ 		procd_connect_ubus();
+-		service_start_early("ubus", ubus_cmd);
++		service_start_early("ubus", ubus_cmd, p?"ubus":NULL, p?"ubus":NULL);
+ 		break;
+ 
+ 	case STATE_INIT:
+-- 
+2.28.0
+

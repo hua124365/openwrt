@@ -1,0 +1,183 @@
+From ebc5a7fe03c8db682ffa93fce897284fd047441b Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 19 Oct 2020 17:15:11 +0100
+Subject: [PATCH 6/7] jail: nuke old capabilities code in favour of reusing OCI
+ code
+
+Previsously capabilities could be defined for slim-containers using
+our own JSON format, only allowing to modify capabilities in the
+bouding set. As apparently that was never used by even a single
+package, drop that old parser and logic in favour of reusing the now
+existing OCI capability handling functions.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ jail/capabilities.c | 79 ++++++---------------------------------------
+ jail/capabilities.h |  3 +-
+ jail/jail.c         | 16 +++++----
+ 3 files changed, 19 insertions(+), 79 deletions(-)
+
+diff --git a/jail/capabilities.c b/jail/capabilities.c
+index 8b8e1a3..2eb154e 100644
+--- a/jail/capabilities.c
++++ b/jail/capabilities.c
+@@ -203,84 +203,23 @@ int applyOCIcapabilities(struct jail_capset ocicapset)
+ 	return 0;
+ }
+ 
+-int drop_capabilities(const char *file)
++int parseOCIcapabilities_from_file(struct jail_capset *capset, const char *file)
+ {
+-	enum {
+-		CAP_KEEP,
+-		CAP_DROP,
+-		__CAP_MAX
+-	};
+-	static const struct blobmsg_policy policy[__CAP_MAX] = {
+-		[CAP_KEEP] = { .name = "cap.keep", .type = BLOBMSG_TYPE_ARRAY },
+-		[CAP_DROP] = { .name = "cap.drop", .type = BLOBMSG_TYPE_ARRAY },
+-	};
+ 	struct blob_buf b = { 0 };
+-	struct blob_attr *tb[__CAP_MAX];
+-	struct blob_attr *cur;
+-	int rem, cap;
+-	char *name;
+-	uint64_t capdrop = 0LLU;
++	int ret;
+ 
+ 	DEBUG("dropping capabilities\n");
+ 
+ 	blob_buf_init(&b, 0);
+-	if (!blobmsg_add_json_from_file(&b, file)) {
++	ret = !blobmsg_add_json_from_file(&b, file);
++	if (ret) {
+ 		ERROR("failed to load %s\n", file);
+-		return -1;
+-	}
+-
+-	blobmsg_parse(policy, __CAP_MAX, tb, blob_data(b.head), blob_len(b.head));
+-	if (!tb[CAP_KEEP] && !tb[CAP_DROP]) {
+-		ERROR("failed to parse %s\n", file);
+-		return -1;
++		goto err;
+ 	}
+ 
+-	blobmsg_for_each_attr(cur, tb[CAP_KEEP], rem) {
+-		name = blobmsg_get_string(cur);
+-		if (!name) {
+-			ERROR("invalid capability name in cap.keep\n");
+-			return -1;
+-		}
+-		cap = find_capabilities(name);
+-		if (cap == -1) {
+-			ERROR("unknown capability %s in cap.keep\n", name);
+-			return -1;
+-		}
+-		capdrop |= (1LLU << cap);
+-	}
+-
+-	if (capdrop == 0LLU) {
+-		DEBUG("cap.keep empty -> only dropping capabilities from cap.drop (blacklist)\n");
+-		capdrop = JAIL_CAP_ALL;
+-	} else {
+-		DEBUG("cap.keep has at least one capability -> dropping every capabilities not in cap.keep (whitelist)\n");
+-	}
++	ret = parseOCIcapabilities(capset, b.head);
+ 
+-	blobmsg_for_each_attr(cur, tb[CAP_DROP], rem) {
+-		name = blobmsg_get_string(cur);
+-		if (!name) {
+-			ERROR("invalid capability name in cap.drop\n");
+-			return -1;
+-		}
+-		cap = find_capabilities(name);
+-		if (cap == -1) {
+-			ERROR("unknown capability %s in cap.drop\n", name);
+-			return -1;
+-		}
+-		capdrop &= ~(1LLU << cap);
+-	}
+-
+-	for (cap = 0; cap <= CAP_LAST_CAP; cap++) {
+-		if ( (capdrop & (1LLU << cap)) == 0) {
+-			DEBUG("dropping capability %s (%d)\n", capabilities_names[cap], cap);
+-			if (prctl(PR_CAPBSET_DROP, cap, 0, 0, 0)) {
+-				ERROR("prctl(PR_CAPBSET_DROP, %d) failed: %m\n", cap);
+-				return errno;
+-			}
+-		} else {
+-			DEBUG("keeping capability %s (%d)\n", capabilities_names[cap], cap);
+-		}
+-	}
+-
+-	return 0;
++err:
++	blob_buf_free(&b);
++	return ret;
+ }
+diff --git a/jail/capabilities.h b/jail/capabilities.h
+index f75a34f..7185fd4 100644
+--- a/jail/capabilities.h
++++ b/jail/capabilities.h
+@@ -25,9 +25,8 @@ struct jail_capset {
+ 	uint8_t apply;
+ };
+ 
+-int drop_capabilities(const char *file);
+-
+ int parseOCIcapabilities(struct jail_capset *capset, struct blob_attr *msg);
++int parseOCIcapabilities_from_file(struct jail_capset *capset, const char *file);
+ int applyOCIcapabilities(struct jail_capset capset);
+ 
+ /* capget/capset syscall wrappers are provided by libc */
+diff --git a/jail/jail.c b/jail/jail.c
+index ec2ec95..ede0944 100644
+--- a/jail/jail.c
++++ b/jail/jail.c
+@@ -1172,6 +1172,9 @@ static void post_jail_fs(void)
+ 
+ static void post_start_hook(void)
+ {
++	if (applyOCIcapabilities(opts.capset))
++		exit(EXIT_FAILURE);
++
+ 	if (!(opts.namespace & CLONE_NEWUSER) && (opts.setns.user == -1)) {
+ 		int pw_uid, pw_gid, gr_gid;
+ 		get_jail_user(&pw_uid, &pw_gid, &gr_gid);
+@@ -1188,12 +1191,6 @@ static void post_start_hook(void)
+ 	if (opts.set_umask)
+ 		umask(opts.umask);
+ 
+-	if (applyOCIcapabilities(opts.capset))
+-		exit(EXIT_FAILURE);
+-
+-	if (opts.capabilities && drop_capabilities(opts.capabilities))
+-		exit(EXIT_FAILURE);
+-
+ 	if (opts.no_new_privs && prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) {
+                 ERROR("prctl(PR_SET_NO_NEW_PRIVS) failed: %m\n");
+ 		exit(EXIT_FAILURE);
+@@ -2482,6 +2479,11 @@ int main(int argc, char **argv)
+ 	opts.setns.time = -1;
+ #endif
+ 
++	if (opts.capabilities && parseOCIcapabilities_from_file(&opts.capset, opts.capabilities)) {
++		ERROR("failed to read capabilities from file %s\n", opts.capabilities);
++		return -1;
++	}
++
+ 	if (opts.ocibundle) {
+ 		char *jsonfile;
+ 		int ocires;
+@@ -2512,7 +2514,7 @@ int main(int argc, char **argv)
+ 	}
+ 	DEBUG("Using namespaces(0x%08x), capabilities(%d), seccomp(%d)\n",
+ 		opts.namespace,
+-		opts.capabilities != 0 || opts.capset.apply,
++		opts.capset.apply,
+ 		opts.seccomp != 0 || opts.ociseccomp != 0);
+ 
+ 	uloop_init();
+-- 
+2.28.0
+

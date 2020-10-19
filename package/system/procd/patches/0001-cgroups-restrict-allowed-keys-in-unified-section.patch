@@ -1,0 +1,37 @@
+From 80c951668c0e3bd66888302a5b3f12c7324d9c82 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 13 Aug 2020 01:22:11 +0100
+Subject: [PATCH 1/7] cgroups: restrict allowed keys in 'unified' section
+
+Prevent specifying directories by banning the use of '/' characters
+and disallow some internal cgroup.* files as suggested in [1].
+
+[1]: https://github.com/opencontainers/runtime-spec/pull/1040
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ jail/cgroups.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/jail/cgroups.c b/jail/cgroups.c
+index 97583b3..ab88643 100644
+--- a/jail/cgroups.c
++++ b/jail/cgroups.c
+@@ -721,6 +721,14 @@ static int parseOCIlinuxcgroups_unified(struct blob_attr *msg)
+ 		if (blobmsg_type(cur) != BLOBMSG_TYPE_STRING)
+ 			return EINVAL;
+ 
++		/* restrict keys */
++		if (strchr(blobmsg_name(cur), '/') ||
++		    !strcmp(blobmsg_name(cur), "cgroup.subtree_control") ||
++		    !strcmp(blobmsg_name(cur), "cgroup.procs") ||
++		    !strcmp(blobmsg_name(cur), "cgroup.threads") ||
++		    !strcmp(blobmsg_name(cur), "cgroup.freeze"))
++			return EINVAL;
++
+ 		cgroups_set(blobmsg_name(cur), blobmsg_get_string(cur));
+ 	}
+ 
+-- 
+2.28.0
+

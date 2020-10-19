@@ -1,0 +1,32 @@
+From 12a5b97711b74efa72eae328c1e73b8fdfb76d74 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 19 Oct 2020 17:00:26 +0100
+Subject: [PATCH 4/7] jail: adapt to new ubus socket path
+
+The previous commit
+3121467 ("early: run ubusd non-root as user ubus, group ubus")
+changed the path of the ubus socket from /var/run/ubus.sock to
+/var/run/ubus/ubus.sock. Adapt jail to also mount-bind that new
+path for jails which include ubus access (eg. dnsmasq).
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ jail/jail.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/jail/jail.c b/jail/jail.c
+index 0a2f978..ec2ec95 100644
+--- a/jail/jail.c
++++ b/jail/jail.c
+@@ -2366,7 +2366,7 @@ int main(int argc, char **argv)
+ {
+ 	uid_t uid = getuid();
+ 	const char log[] = "/dev/log";
+-	const char ubus[] = "/var/run/ubus.sock";
++	const char ubus[] = "/var/run/ubus/ubus.sock";
+ 	int ch, ret;
+ 
+ 	if (uid) {
+-- 
+2.28.0
+
