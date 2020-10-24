@@ -1,0 +1,23 @@
+vendor: TP-Link
+model: RE200
+variant: v4
+bootloader: unknown
+cpu: MediaTek MT7628AN
+cpu_cores: 1
+cpu_mhz: 580
+memory_mb: 64
+storage:
+  - type: unknown
+    size_mb: 8
+device_type: WiFi Router
+ethernet_100m_ports: 1
+jtag: false
+serial: 57600 / 8N1
+outdoor: false
+supported_current_rel: none
+supported_since_rel: snapshot
+target: ramips
+vlan: true
+wlan_24ghz: b/g
+wlan_driver: unknown
+wlan_hardware: unknown"
