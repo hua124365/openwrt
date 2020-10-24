@@ -1,0 +1,9 @@
+$id: https://openwrt.org/schema/wifi-24ghz.yaml
+$schema: http://json-schema.org/draft-07/schema#
+title: 2.4GHz WiFi
+type: string
+enum:
+  - none
+  - b
+  - b/g
+  - b/g/n

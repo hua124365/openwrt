@@ -1,0 +1,180 @@
+$id: http://openwrt.org/schema/device.yaml
+$schema: http://yaml-schema.org/draft-07/schema
+additionalProperties: true
+title: Schema for an OpenWrt device
+type: object
+
+required:
+  - cpu
+  - cpu_cores
+  - cpu_mhz
+  - memory
+  - model
+  - storage
+  - vendor
+
+examples:
+  - bootloader: RedBoot
+    cpu: Atheros AR2315
+    cpu_cores: 1
+    cpu_mhz: 180
+    detachable_antennas: 1
+    device_type: WiFi Router
+    ethernet_100m_ports: 1
+    flash_mb: 8
+    jtag: false
+    memory: 16
+    model: La Fonera
+    variant: v1
+    outdoor: false
+    power_supply: 5 VDC, 2.0 A
+    serial: none
+    target: ath25
+    vendor: Fon
+    vlan: false
+    wifi_24ghz: b/g
+    wifi_50ghz: a
+    wlan_driver: unknown
+    wlan_hardware: Atheros AR2315
+
+properties:
+  bootloader:
+    $id: '#/properties/bootloader'
+    $ref: file:bootloader.yaml
+
+  cpu:
+    $id: '#/properties/cpu'
+    title: CPU model
+    type: string
+
+  cpu_cores:
+    $id: '#/properties/cpu_cores'
+    title: CPU cores
+    type: number
+    minimum: 1
+
+  cpu_mhz:
+    $id: '#/properties/cpu_mhz'
+    title: CPU MHz
+    type: number
+    minimum: 1
+
+  detachable_antennas:
+    $id: '#/properties/detachable_antennas'
+    title: The detachable_antennas schema
+    type: number
+    minimum: 0
+
+  device_type:
+    $id: '#/properties/device_type'
+    $ref: file:device-type.yaml
+    title: Type
+    type: string
+
+  ethernet_100m_ports:
+    $id: '#/properties/ethernet_100m_ports'
+    title: 100MBit ports
+    type: number
+    minimum: 0
+
+  ethernet_1g_ports:
+    $id: '#/properties/ethernet_1g_ports'
+    title: 1GBit ports
+    type: number
+    minimum: 0
+
+  ethernet_10g_ports:
+    $id: '#/properties/ethernet_10g_ports'
+    title: 10GBit ports
+    type: number
+    minimum: 0
+
+  jtag:
+    $id: '#/properties/jtag'
+    title: JTAG
+    type: boolean
+
+  memory:
+    $id: '#/properties/memory'
+    title: Memory in MegaByte
+    type: number
+    minimum: 1
+
+  model:
+    $id: '#/properties/model'
+    title: Model
+    type: string
+
+  variant:
+    $id: '#/properties/variant'
+    title: Variant
+    type: string
+
+  outdoor:
+    $id: '#/properties/outdoor'
+    title: Outdoor
+    type: boolean
+
+  power_supply:
+    $id: '#/properties/power_supply'
+    title: Power Supply
+    type: string
+
+  serial:
+    $id: '#/properties/serial'
+    title: Serial
+    type: string
+    enum:
+      - none
+      - 9600 / 8N1
+      - 19200 / 8N1
+      - 38400 / 8N1
+      - 57600 / 8N1
+      - 115200 / 8N1
+      - 1500000 / 8N1
+
+  storages:
+    $id: '#/properties/storages'
+    title: Storages
+    type: array
+    items:
+      $ref: file:storage.yaml
+    minItems: 1
+
+  target:
+    $id: '#/properties/target'
+    $ref: file:target.yaml
+    title: The target schema
+    type: string
+
+  vendor:
+    $id: '#/properties/vendor'
+    $ref: file:vendor.yaml
+
+  vlan:
+    $id: '#/properties/vlan'
+    title: VLAN
+    type: boolean
+
+  wifi_24ghz:
+    $id: '#/properties/wifi_24ghz'
+    $ref: file:wifi-24ghz.yaml
+    title: 2.4GHz WiFi
+    type: string
+
+  wifi_50ghz:
+    $id: '#/properties/wifi_50ghz'
+    $ref: file:wifi-50ghz.yaml
+    title: 5.0GHz WiFi
+    type: string
+
+  wifi_driver:
+    $id: '#/properties/wlan_driver'
+    $ref: file:wifi-driver.yaml
+    title: WiFi Driver
+    type: string
+
+  wifi_hardware:
+    $id: '#/properties/wifi_hardware'
+    title: WiFi Hardware
+    type: string

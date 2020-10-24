@@ -1,0 +1,11 @@
+$id: https://openwrt.org/schema/wifi-50ghz.yaml
+$schema: http://json-schema.org/draft-07/schema#
+title: wifi-50ghz
+description: 5.0GHz WiFi
+type: string
+enum:
+  - none
+  - a
+  - a/n
+  - ac
+  - ax

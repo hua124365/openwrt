@@ -1,0 +1,27 @@
+$id: https://openwrt.org/schema/wifi-driver.yaml
+$schema: http://json-schema.org/draft-07/schema#
+title: wifi-driver
+description: WiFi Driver
+type: string
+enum:
+  - ath10k
+  - ath10k-ct
+  - ath10k-ct-smallbuffers
+  - ath5k
+  - ath9k
+  - b43 legacy
+  - b43
+  - brcmfmac
+  - brcmsmac
+  - broadcom-wl
+  - mt76
+  - mwlwifi
+  - none
+  - other
+  - rt2500pci
+  - rt2800pci
+  - rt2800soc
+  - rt2800usb
+  - rtl819x
+  - rtl8xxxu
+  - unknown

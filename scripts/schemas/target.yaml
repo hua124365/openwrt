@@ -1,0 +1,67 @@
+$id: https://openwrt.org/schema/target/yaml
+$schema: http://json-schema.org/draft-07/schema#
+title: Target
+description: OpenWrt Target
+type: string
+enum:
+  - adm5120
+  - adm8668
+  - apm821xx
+  - ar7
+  - ar71xx
+  - ar71xx-ath79
+  - arc770
+  - archs38
+  - arm64
+  - armvirt
+  - aruba
+  - at91
+  - ath25
+  - ath79
+  - atheros
+  - au1000
+  - avr32
+  - bcm27xx
+  - bcm47xx
+  - bcm53xx
+  - bcm63xx
+  - brcm-2.4
+  - brcm47xx
+  - brcm63xx
+  - cns21xx
+  - cns3xxx
+  - cobalt
+  - gemini
+  - imx23
+  - imx6
+  - ipq40xx
+  - ipq806x
+  - ixp4xx
+  - kirkwood
+  - lantiq
+  - layerscape
+  - magicbox
+  - malta
+  - mcs814x
+  - mediatek
+  - mpc85xx
+  - mvebu
+  - mxs
+  - octeon
+  - octeontx
+  - omap
+  - orion
+  - oxnas
+  - pistachio
+  - ppc44x
+  - ramips
+  - rb532
+  - rdc
+  - realview
+  - rockchip
+  - samsung
+  - sunxi
+  - tegra
+  - x86
+  - xburst
+  - zynq
