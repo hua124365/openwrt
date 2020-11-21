@@ -1,0 +1,575 @@
+From patchwork Thu Sep 24 20:54:32 2020
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Paul Spooren <mail@aparcar.org>
+X-Patchwork-Id: 1370881
+Return-Path: 
+ <openwrt-devel-bounces+incoming=patchwork.ozlabs.org@lists.openwrt.org>
+X-Original-To: incoming@patchwork.ozlabs.org
+Delivered-To: patchwork-incoming@bilbo.ozlabs.org
+Authentication-Results: ozlabs.org;
+ spf=pass (sender SPF authorized) smtp.mailfrom=lists.openwrt.org
+ (client-ip=2001:8b0:10b:1231::1; helo=merlin.infradead.org;
+ envelope-from=openwrt-devel-bounces+incoming=patchwork.ozlabs.org@lists.openwrt.org;
+ receiver=<UNKNOWN>)
+Authentication-Results: ozlabs.org;
+ dmarc=none (p=none dis=none) header.from=aparcar.org
+Authentication-Results: ozlabs.org;
+	dkim=pass (2048-bit key;
+ secure) header.d=lists.infradead.org header.i=@lists.infradead.org
+ header.a=rsa-sha256 header.s=merlin.20170209 header.b=OyFxfdi6;
+	dkim-atps=neutral
+Received: from merlin.infradead.org (merlin.infradead.org
+ [IPv6:2001:8b0:10b:1231::1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest
+ SHA256)
+	(No client certificate requested)
+	by ozlabs.org (Postfix) with ESMTPS id 4By6m32qWvz9sS8
+	for <incoming@patchwork.ozlabs.org>; Fri, 25 Sep 2020 06:56:34 +1000 (AEST)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=lists.infradead.org; s=merlin.20170209; h=Sender:Content-Transfer-Encoding:
+	Content-Type:Cc:List-Subscribe:List-Help:List-Post:List-Archive:
+	List-Unsubscribe:List-Id:MIME-Version:Message-Id:Date:Subject:To:From:
+	Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:Resent-Sender
+	:Resent-To:Resent-Cc:Resent-Message-ID:In-Reply-To:References:List-Owner;
+	bh=6edwIRjPw7wZIW2P+/igbpS7jEBjkndTyEQ3La52FUM=; b=OyFxfdi6OOSW1RxHqq9vFCUDKN
+	KFG+39nlkNWUGBZ1eLnR8tUoDu4xfdZZK0VSsVS1bZsBFzGvOBr7wUf34Ohmw8+XUldsu0xgYmrxE
+	C+hs2dgbvDvkkVwxcf6dJ4qfIZOoPHoZsh4z1vIJ9PzAiCg6h58fI9cfWiIhheRRy4HV1JEs6vKEl
+	M43vqhVBdj9G2m8Tnl/JHONd/vgD/nxUNCgraPhfAewvBEnTSLXj87VYoHjV8ce1t76J5PjCkX7ez
+	GGL2icngRQcPM12X+rKQuzyiDPSF+DDQcAm+lMWKuq1tAY0DLWUGOLJQU8mgHqHJ+E+DGcck0f69V
+	IpMNMNYA==;
+Received: from localhost ([::1] helo=merlin.infradead.org)
+	by merlin.infradead.org with esmtp (Exim 4.92.3 #3 (Red Hat Linux))
+	id 1kLYGP-0003El-59; Thu, 24 Sep 2020 20:54:49 +0000
+Received: from relay12.mail.gandi.net ([217.70.178.232])
+ by merlin.infradead.org with esmtps (Exim 4.92.3 #3 (Red Hat Linux))
+ id 1kLYGJ-0003A6-GM
+ for openwrt-devel@lists.openwrt.org; Thu, 24 Sep 2020 20:54:45 +0000
+Received: from dawn.lan (udp224251uds.hawaiiantel.net [72.234.141.215])
+ (Authenticated sender: mail@aparcar.org)
+ by relay12.mail.gandi.net (Postfix) with ESMTPA id 1CB48200003;
+ Thu, 24 Sep 2020 20:54:36 +0000 (UTC)
+From: Paul Spooren <mail@aparcar.org>
+To: openwrt-devel@lists.openwrt.org
+Subject: [PATCH 1/2] libopkg: remove support for "dist" config
+Date: Thu, 24 Sep 2020 10:54:32 -1000
+Message-Id: <20200924205433.1531208-1-mail@aparcar.org>
+X-Mailer: git-send-email 2.25.1
+MIME-Version: 1.0
+X-CRM114-Version: 20100106-BlameMichelson ( TRE 0.8.0 (BSD) ) MR-646709E3 
+X-CRM114-CacheID: sfid-20200924_165443_764483_589A0CD6 
+X-CRM114-Status: GOOD (  13.98  )
+X-Spam-Score: -0.7 (/)
+X-Spam-Report: SpamAssassin version 3.4.4 on merlin.infradead.org summary:
+ Content analysis details:   (-0.7 points)
+ pts rule name              description
+ ---- ----------------------
+ --------------------------------------------------
+ -0.7 RCVD_IN_DNSWL_LOW      RBL: Sender listed at https://www.dnswl.org/,
+ low trust [217.70.178.232 listed in list.dnswl.org]
+ 0.0 RCVD_IN_MSPIKE_H3      RBL: Good reputation (+3)
+ [217.70.178.232 listed in wl.mailspike.net]
+ 0.0 SPF_HELO_NONE          SPF: HELO does not publish an SPF Record
+ -0.0 SPF_PASS               SPF: sender matches SPF record
+ 0.0 RCVD_IN_MSPIKE_WL      Mailspike good senders
+X-BeenThere: openwrt-devel@lists.openwrt.org
+X-Mailman-Version: 2.1.29
+Precedence: list
+List-Id: OpenWrt Development List <openwrt-devel.lists.openwrt.org>
+List-Unsubscribe: <https://lists.openwrt.org/mailman/options/openwrt-devel>,
+ <mailto:openwrt-devel-request@lists.openwrt.org?subject=unsubscribe>
+List-Archive: <http://lists.openwrt.org/pipermail/openwrt-devel/>
+List-Post: <mailto:openwrt-devel@lists.openwrt.org>
+List-Help: <mailto:openwrt-devel-request@lists.openwrt.org?subject=help>
+List-Subscribe: <https://lists.openwrt.org/mailman/listinfo/openwrt-devel>,
+ <mailto:openwrt-devel-request@lists.openwrt.org?subject=subscribe>
+Cc: jo@mein.io, Paul Spooren <mail@aparcar.org>
+Sender: "openwrt-devel" <openwrt-devel-bounces@lists.openwrt.org>
+Errors-To: 
+ openwrt-devel-bounces+incoming=patchwork.ozlabs.org@lists.openwrt.org
+
+The "dist" config option is legacy to imitate Debians repository
+structure. However this is never used within the OpenWrt ecosystem and
+can therefore be removed.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ libopkg/opkg_conf.c | 32 +++-----------------------------
+ libopkg/opkg_conf.h |  1 -
+ libopkg/pkg_hash.c  | 25 -------------------------
+ libopkg/pkg_hash.h  |  1 -
+ 4 files changed, 3 insertions(+), 56 deletions(-)
+
+diff --git a/libopkg/opkg_conf.c b/libopkg/opkg_conf.c
+index 38703ee..ee151f5 100644
+--- a/libopkg/opkg_conf.c
++++ b/libopkg/opkg_conf.c
+@@ -184,8 +184,7 @@ static int opkg_conf_set_option(const char *name, const char *value)
+ 
+ static int
+ opkg_conf_parse_file(const char *filename,
+-		     pkg_src_list_t * pkg_src_list,
+-		     pkg_src_list_t * dist_src_list)
++		     pkg_src_list_t * pkg_src_list)
+ {
+ 	int line_num = 0;
+ 	int err = 0;
+@@ -291,26 +290,6 @@ opkg_conf_parse_file(const char *filename,
+ 			   tmp_src_nv_pair_list for sake of symmetry.) */
+ 			if (strcmp(type, "option") == 0) {
+ 				opkg_conf_set_option(name, value);
+-			} else if (strcmp(type, "dist") == 0) {
+-				if (!nv_pair_list_find
+-				    ((nv_pair_list_t *) dist_src_list, name)) {
+-					pkg_src_list_append(dist_src_list, name,
+-							    value, extra, 0);
+-				} else {
+-					opkg_msg(ERROR,
+-						 "Duplicate dist declaration (%s %s). "
+-						 "Skipping.\n", name, value);
+-				}
+-			} else if (strcmp(type, "dist/gz") == 0) {
+-				if (!nv_pair_list_find
+-				    ((nv_pair_list_t *) dist_src_list, name)) {
+-					pkg_src_list_append(dist_src_list, name,
+-							    value, extra, 1);
+-				} else {
+-					opkg_msg(ERROR,
+-						 "Duplicate dist declaration (%s %s). "
+-						 "Skipping.\n", name, value);
+-				}
+ 			} else if (strcmp(type, "src") == 0) {
+ 				if (!nv_pair_list_find
+ 				    ((nv_pair_list_t *) pkg_src_list, name)) {
+@@ -458,7 +437,6 @@ static int glob_errfunc(const char *epath, int eerrno)
+ int opkg_conf_init(void)
+ {
+ 	pkg_src_list_init(&conf->pkg_src_list);
+-	pkg_src_list_init(&conf->dist_src_list);
+ 	pkg_dest_list_init(&conf->pkg_dest_list);
+ 	pkg_dest_list_init(&conf->tmp_dest_list);
+ 	nv_pair_list_init(&conf->arch_list);
+@@ -486,8 +464,7 @@ int opkg_conf_load(void)
+ 			goto err0;
+ 		}
+ 		if (opkg_conf_parse_file(conf->conf_file,
+-					 &conf->pkg_src_list,
+-					 &conf->dist_src_list))
++					 &conf->pkg_src_list))
+ 			goto err1;
+ 	}
+ 
+@@ -518,8 +495,7 @@ int opkg_conf_load(void)
+ 			    !strcmp(conf->conf_file, globbuf.gl_pathv[i]))
+ 				continue;
+ 		if (opkg_conf_parse_file(globbuf.gl_pathv[i],
+-					 &conf->pkg_src_list,
+-					 &conf->dist_src_list) < 0) {
++					 &conf->pkg_src_list) < 0) {
+ 			globfree(&globbuf);
+ 			goto err1;
+ 		}
+@@ -629,7 +605,6 @@ err2:
+ 	}
+ err1:
+ 	pkg_src_list_deinit(&conf->pkg_src_list);
+-	pkg_src_list_deinit(&conf->dist_src_list);
+ 	pkg_dest_list_deinit(&conf->pkg_dest_list);
+ 	nv_pair_list_deinit(&conf->arch_list);
+ 
+@@ -670,7 +645,6 @@ void opkg_conf_deinit(void)
+ 		free(conf->conf_file);
+ 
+ 	pkg_src_list_deinit(&conf->pkg_src_list);
+-	pkg_src_list_deinit(&conf->dist_src_list);
+ 	pkg_dest_list_deinit(&conf->pkg_dest_list);
+ 	nv_pair_list_deinit(&conf->arch_list);
+ 
+diff --git a/libopkg/opkg_conf.h b/libopkg/opkg_conf.h
+index 91190b3..d38fd73 100644
+--- a/libopkg/opkg_conf.h
++++ b/libopkg/opkg_conf.h
+@@ -45,7 +45,6 @@ extern opkg_conf_t *conf;
+ 
+ struct opkg_conf {
+ 	pkg_src_list_t pkg_src_list;
+-	pkg_src_list_t dist_src_list;
+ 	pkg_dest_list_t pkg_dest_list;
+ 	pkg_dest_list_t tmp_dest_list;
+ 	nv_pair_list_t arch_list;
+diff --git a/libopkg/pkg_hash.c b/libopkg/pkg_hash.c
+index 52c64ff..bf971d7 100644
+--- a/libopkg/pkg_hash.c
++++ b/libopkg/pkg_hash.c
+@@ -68,31 +68,6 @@ void pkg_hash_deinit(void)
+ 	hash_table_deinit(&conf->pkg_hash);
+ }
+ 
+-int dist_hash_add_from_file(const char *lists_dir, pkg_src_t * dist)
+-{
+-	nv_pair_list_elt_t *l;
+-	char *list_file, *subname;
+-
+-	list_for_each_entry(l, &conf->arch_list.head, node) {
+-		nv_pair_t *nv = (nv_pair_t *) l->data;
+-		sprintf_alloc(&subname, "%s-%s", dist->name, nv->name);
+-		sprintf_alloc(&list_file, "%s/%s", lists_dir, subname);
+-
+-		if (file_exists(list_file)) {
+-			if (pkg_hash_add_from_file(list_file, dist, NULL, 0, 0, NULL, NULL)) {
+-				free(list_file);
+-				return -1;
+-			}
+-			pkg_src_list_append(&conf->pkg_src_list, subname,
+-					    dist->value, "__dummy__", 0);
+-		}
+-
+-		free(list_file);
+-	}
+-
+-	return 0;
+-}
+-
+ int
+ pkg_hash_add_from_file(const char *file_name,
+ 		       pkg_src_t * src, pkg_dest_t * dest, int is_status_file, int state_flags,
+diff --git a/libopkg/pkg_hash.h b/libopkg/pkg_hash.h
+index e5ab2e0..b10c878 100644
+--- a/libopkg/pkg_hash.h
++++ b/libopkg/pkg_hash.h
+@@ -28,7 +28,6 @@ void pkg_hash_deinit(void);
+ 
+ void pkg_hash_fetch_available(pkg_vec_t * available);
+ 
+-int dist_hash_add_from_file(const char *file_name, pkg_src_t * dist);
+ int pkg_hash_add_from_file(const char *file_name, pkg_src_t * src,
+ 			   pkg_dest_t * dest, int is_status_file, int state_flags,
+ 			   void (*cb)(pkg_t *, void *), void *priv);
+
+From patchwork Thu Sep 24 20:54:33 2020
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Paul Spooren <mail@aparcar.org>
+X-Patchwork-Id: 1370882
+Return-Path: 
+ <openwrt-devel-bounces+incoming=patchwork.ozlabs.org@lists.openwrt.org>
+X-Original-To: incoming@patchwork.ozlabs.org
+Delivered-To: patchwork-incoming@bilbo.ozlabs.org
+Authentication-Results: ozlabs.org;
+ spf=pass (sender SPF authorized) smtp.mailfrom=lists.openwrt.org
+ (client-ip=2001:8b0:10b:1231::1; helo=merlin.infradead.org;
+ envelope-from=openwrt-devel-bounces+incoming=patchwork.ozlabs.org@lists.openwrt.org;
+ receiver=<UNKNOWN>)
+Authentication-Results: ozlabs.org;
+ dmarc=none (p=none dis=none) header.from=aparcar.org
+Authentication-Results: ozlabs.org;
+	dkim=pass (2048-bit key;
+ secure) header.d=lists.infradead.org header.i=@lists.infradead.org
+ header.a=rsa-sha256 header.s=merlin.20170209 header.b=TBA2wTUc;
+	dkim-atps=neutral
+Received: from merlin.infradead.org (merlin.infradead.org
+ [IPv6:2001:8b0:10b:1231::1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest
+ SHA256)
+	(No client certificate requested)
+	by ozlabs.org (Postfix) with ESMTPS id 4By6m30pzSz9sR4
+	for <incoming@patchwork.ozlabs.org>; Fri, 25 Sep 2020 06:56:34 +1000 (AEST)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=lists.infradead.org; s=merlin.20170209; h=Sender:Content-Transfer-Encoding:
+	Content-Type:Cc:List-Subscribe:List-Help:List-Post:List-Archive:
+	List-Unsubscribe:List-Id:MIME-Version:References:In-Reply-To:Message-Id:Date:
+	Subject:To:From:Reply-To:Content-ID:Content-Description:Resent-Date:
+	Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Owner;
+	 bh=Micz73skssgAVjf8ns/JKXOt2l0LNxmVMicSwCmruKU=; b=TBA2wTUc9iPyKT0jTeUi/HJcG
+	qBx1flOyalzOsQ6rOWzZ8qDTtbhjBaHblZ9TkZzxO3zbD/KQKrNQzxNCi3RbByiep1OFFHemQwooN
+	6WwIFJ06IjoUE46qZ7hKqC6VhYUAUPw3d65xI56qUMbUZbO6LUaP/qKv1XDclqgVPN2f0jO73w1js
+	bKBjDLBnokpNInAIHfIY4okfi1Ihz+BxARRZwrlLUwtz2REtdsf4SIUYSzJRvfCvGiLA/kbDtBXz9
+	t1AMIbmgUA3Q1h54j5IpSGmujHu7ApmTESR05YpJkz/Y0Cu/9zM4exUL+V2NgigTwNlkIdI0H2Kp6
+	7lrxlSEQw==;
+Received: from localhost ([::1] helo=merlin.infradead.org)
+	by merlin.infradead.org with esmtp (Exim 4.92.3 #3 (Red Hat Linux))
+	id 1kLYGR-0003Ft-Ib; Thu, 24 Sep 2020 20:54:51 +0000
+Received: from relay12.mail.gandi.net ([217.70.178.232])
+ by merlin.infradead.org with esmtps (Exim 4.92.3 #3 (Red Hat Linux))
+ id 1kLYGJ-0003AP-Dn
+ for openwrt-devel@lists.openwrt.org; Thu, 24 Sep 2020 20:54:46 +0000
+Received: from dawn.lan (udp224251uds.hawaiiantel.net [72.234.141.215])
+ (Authenticated sender: mail@aparcar.org)
+ by relay12.mail.gandi.net (Postfix) with ESMTPA id 14E7D200008;
+ Thu, 24 Sep 2020 20:54:38 +0000 (UTC)
+From: Paul Spooren <mail@aparcar.org>
+To: openwrt-devel@lists.openwrt.org
+Subject: [PATCH 2/2] libopkg: remove "extra_data" option
+Date: Thu, 24 Sep 2020 10:54:33 -1000
+Message-Id: <20200924205433.1531208-2-mail@aparcar.org>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20200924205433.1531208-1-mail@aparcar.org>
+References: <20200924205433.1531208-1-mail@aparcar.org>
+MIME-Version: 1.0
+X-CRM114-Version: 20100106-BlameMichelson ( TRE 0.8.0 (BSD) ) MR-646709E3 
+X-CRM114-CacheID: sfid-20200924_165443_653837_832044BC 
+X-CRM114-Status: GOOD (  17.47  )
+X-Spam-Score: -0.7 (/)
+X-Spam-Report: SpamAssassin version 3.4.4 on merlin.infradead.org summary:
+ Content analysis details:   (-0.7 points)
+ pts rule name              description
+ ---- ----------------------
+ --------------------------------------------------
+ -0.7 RCVD_IN_DNSWL_LOW      RBL: Sender listed at https://www.dnswl.org/,
+ low trust [217.70.178.232 listed in list.dnswl.org]
+ 0.0 RCVD_IN_MSPIKE_H3      RBL: Good reputation (+3)
+ [217.70.178.232 listed in wl.mailspike.net]
+ 0.0 SPF_HELO_NONE          SPF: HELO does not publish an SPF Record
+ -0.0 SPF_PASS               SPF: sender matches SPF record
+ 0.0 RCVD_IN_MSPIKE_WL      Mailspike good senders
+X-BeenThere: openwrt-devel@lists.openwrt.org
+X-Mailman-Version: 2.1.29
+Precedence: list
+List-Id: OpenWrt Development List <openwrt-devel.lists.openwrt.org>
+List-Unsubscribe: <https://lists.openwrt.org/mailman/options/openwrt-devel>,
+ <mailto:openwrt-devel-request@lists.openwrt.org?subject=unsubscribe>
+List-Archive: <http://lists.openwrt.org/pipermail/openwrt-devel/>
+List-Post: <mailto:openwrt-devel@lists.openwrt.org>
+List-Help: <mailto:openwrt-devel-request@lists.openwrt.org?subject=help>
+List-Subscribe: <https://lists.openwrt.org/mailman/listinfo/openwrt-devel>,
+ <mailto:openwrt-devel-request@lists.openwrt.org?subject=subscribe>
+Cc: jo@mein.io, Paul Spooren <mail@aparcar.org>
+Sender: "openwrt-devel" <openwrt-devel-bounces@lists.openwrt.org>
+Errors-To: 
+ openwrt-devel-bounces+incoming=patchwork.ozlabs.org@lists.openwrt.org
+
+The "extra_data" allowed to add an extra option behind a repository
+definition. This was only ever used to either ignore a specific feed by
+setting it to "__dummy__" or adding a sub-folder in the repository path,
+as done for Debian repositories.
+
+Instead of using "__dummy__" it is cleaner to "comment out" the specific
+repository and Debian repository structure is nowhere used in the
+OpenWrt ecosystem, therefore it seem save to remove "extra_data".
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ libopkg/opkg.c         | 17 ++++-------------
+ libopkg/opkg_cmd.c     | 20 ++++----------------
+ libopkg/opkg_conf.c    | 22 +++-------------------
+ libopkg/pkg_src.c      |  8 +-------
+ libopkg/pkg_src.h      |  3 +--
+ libopkg/pkg_src_list.c |  4 ++--
+ libopkg/pkg_src_list.h |  3 +--
+ 7 files changed, 16 insertions(+), 61 deletions(-)
+
+diff --git a/libopkg/opkg.c b/libopkg/opkg.c
+index 3583488..191e028 100644
+--- a/libopkg/opkg.c
++++ b/libopkg/opkg.c
+@@ -529,13 +529,8 @@ opkg_update_package_lists(opkg_progress_callback_t progress_callback,
+ 
+ 		src = (pkg_src_t *) iter->data;
+ 
+-		if (src->extra_data)	/* debian style? */
+-			sprintf_alloc(&url, "%s/%s/%s", src->value,
+-				      src->extra_data,
+-				      src->gzip ? "Packages.gz" : "Packages");
+-		else
+-			sprintf_alloc(&url, "%s/%s", src->value,
+-				      src->gzip ? "Packages.gz" : "Packages");
++		sprintf_alloc(&url, "%s/%s", src->value,
++			      src->gzip ? "Packages.gz" : "Packages");
+ 
+ 		sprintf_alloc(&list_file_name, "%s/%s", lists_dir, src->name);
+ 
+@@ -550,12 +545,8 @@ opkg_update_package_lists(opkg_progress_callback_t progress_callback,
+ 			char *sig_file_name;
+ 			/* download detached signitures to verify the package lists */
+ 			/* get the url for the sig file */
+-			if (src->extra_data)	/* debian style? */
+-				sprintf_alloc(&url, "%s/%s/%s", src->value,
+-					      src->extra_data, "Packages.sig");
+-			else
+-				sprintf_alloc(&url, "%s/%s", src->value,
+-					      "Packages.sig");
++			sprintf_alloc(&url, "%s/%s", src->value,
++				      "Packages.sig");
+ 
+ 			/* create filename for signature */
+ 			sprintf_alloc(&sig_file_name, "%s/%s.sig", lists_dir,
+diff --git a/libopkg/opkg_cmd.c b/libopkg/opkg_cmd.c
+index a329558..83e345e 100644
+--- a/libopkg/opkg_cmd.c
++++ b/libopkg/opkg_cmd.c
+@@ -117,16 +117,8 @@ static int opkg_update_cmd(int argc, char **argv)
+ 
+ 		src = (pkg_src_t *) iter->data;
+ 
+-		if (src->extra_data && strcmp(src->extra_data, "__dummy__ "))
+-			continue;
+-
+-		if (src->extra_data)	/* debian style? */
+-			sprintf_alloc(&url, "%s/%s/%s", src->value,
+-				      src->extra_data,
+-				      src->gzip ? "Packages.gz" : "Packages");
+-		else
+-			sprintf_alloc(&url, "%s/%s", src->value,
+-				      src->gzip ? "Packages.gz" : "Packages");
++		sprintf_alloc(&url, "%s/%s", src->value,
++			      src->gzip ? "Packages.gz" : "Packages");
+ 
+ 		sprintf_alloc(&list_file_name, "%s/%s", lists_dir, src->name);
+ 		pkglist_dl_error = 0;
+@@ -146,12 +138,8 @@ static int opkg_update_cmd(int argc, char **argv)
+ 		if (pkglist_dl_error == 0 && conf->check_signature) {
+ 			/* download detached signitures to verify the package lists */
+ 			/* get the url for the sig file */
+-			if (src->extra_data)	/* debian style? */
+-				sprintf_alloc(&url, "%s/%s/%s", src->value,
+-					      src->extra_data, "Packages.sig");
+-			else
+-				sprintf_alloc(&url, "%s/%s", src->value,
+-					      "Packages.sig");
++			sprintf_alloc(&url, "%s/%s", src->value,
++				      "Packages.sig");
+ 
+ 			/* create temporary file for it */
+ 			char *tmp_file_name;
+diff --git a/libopkg/opkg_conf.c b/libopkg/opkg_conf.c
+index ee151f5..5fe0be9 100644
+--- a/libopkg/opkg_conf.c
++++ b/libopkg/opkg_conf.c
+@@ -218,7 +218,7 @@ opkg_conf_parse_file(const char *filename,
+ 
+ 	while (1) {
+ 		char *line;
+-		char *type, *name, *value, *extra;
++		char *type, *name, *value;
+ 
+ 		line_num++;
+ 
+@@ -261,20 +261,6 @@ opkg_conf_parse_file(const char *filename,
+ 					 regmatch[9].rm_eo - regmatch[9].rm_so);
+ 		}
+ 
+-		extra = NULL;
+-		if (regmatch[11].rm_so > 0) {
+-			if (regmatch[13].rm_so > 0
+-			    && regmatch[13].rm_so != regmatch[13].rm_eo)
+-				extra =
+-				    xstrndup(line + regmatch[11].rm_so,
+-					     regmatch[13].rm_eo -
+-					     regmatch[11].rm_so);
+-			else
+-				extra = xstrndup(line + regmatch[11].rm_so,
+-						 regmatch[11].rm_eo -
+-						 regmatch[11].rm_so);
+-		}
+-
+ 		if (regmatch[13].rm_so != regmatch[13].rm_eo
+ 		    && strncmp(type, "dist", 4) != 0) {
+ 			opkg_msg(ERROR,
+@@ -294,7 +280,7 @@ opkg_conf_parse_file(const char *filename,
+ 				if (!nv_pair_list_find
+ 				    ((nv_pair_list_t *) pkg_src_list, name)) {
+ 					pkg_src_list_append(pkg_src_list, name,
+-							    value, extra, 0);
++							    value, 0);
+ 				} else {
+ 					opkg_msg(ERROR,
+ 						 "Duplicate src declaration (%s %s). "
+@@ -304,7 +290,7 @@ opkg_conf_parse_file(const char *filename,
+ 				if (!nv_pair_list_find
+ 				    ((nv_pair_list_t *) pkg_src_list, name)) {
+ 					pkg_src_list_append(pkg_src_list, name,
+-							    value, extra, 1);
++							    value, 1);
+ 				} else {
+ 					opkg_msg(ERROR,
+ 						 "Duplicate src declaration (%s %s). "
+@@ -338,8 +324,6 @@ opkg_conf_parse_file(const char *filename,
+ 		free(type);
+ 		free(name);
+ 		free(value);
+-		if (extra)
+-			free(extra);
+ 
+ NEXT_LINE:
+ 		free(line);
+diff --git a/libopkg/pkg_src.c b/libopkg/pkg_src.c
+index fae3ce3..83ede16 100644
+--- a/libopkg/pkg_src.c
++++ b/libopkg/pkg_src.c
+@@ -19,15 +19,11 @@
+ #include "libbb/libbb.h"
+ 
+ int pkg_src_init(pkg_src_t * src, const char *name, const char *base_url,
+-		 const char *extra_data, int gzip)
++		 int gzip)
+ {
+ 	src->gzip = gzip;
+ 	src->name = xstrdup(name);
+ 	src->value = xstrdup(base_url);
+-	if (extra_data)
+-		src->extra_data = xstrdup(extra_data);
+-	else
+-		src->extra_data = NULL;
+ 	return 0;
+ }
+ 
+@@ -35,6 +31,4 @@ void pkg_src_deinit(pkg_src_t * src)
+ {
+ 	free(src->name);
+ 	free(src->value);
+-	if (src->extra_data)
+-		free(src->extra_data);
+ }
+diff --git a/libopkg/pkg_src.h b/libopkg/pkg_src.h
+index 1320f1f..e5e7a42 100644
+--- a/libopkg/pkg_src.h
++++ b/libopkg/pkg_src.h
+@@ -23,12 +23,11 @@
+ typedef struct {
+ 	char *name;
+ 	char *value;
+-	char *extra_data;
+ 	int gzip;
+ } pkg_src_t;
+ 
+ int pkg_src_init(pkg_src_t * src, const char *name, const char *base_url,
+-		 const char *extra_data, int gzip);
++		 int gzip);
+ void pkg_src_deinit(pkg_src_t * src);
+ 
+ #endif
+diff --git a/libopkg/pkg_src_list.c b/libopkg/pkg_src_list.c
+index cc24438..5259423 100644
+--- a/libopkg/pkg_src_list.c
++++ b/libopkg/pkg_src_list.c
+@@ -42,11 +42,11 @@ void pkg_src_list_deinit(pkg_src_list_t * list)
+ 
+ pkg_src_t *pkg_src_list_append(pkg_src_list_t * list,
+ 			       const char *name, const char *base_url,
+-			       const char *extra_data, int gzip)
++			       int gzip)
+ {
+ 	/* freed in pkg_src_list_deinit */
+ 	pkg_src_t *pkg_src = xcalloc(1, sizeof(pkg_src_t));
+-	pkg_src_init(pkg_src, name, base_url, extra_data, gzip);
++	pkg_src_init(pkg_src, name, base_url, gzip);
+ 
+ 	void_list_append((void_list_t *) list, pkg_src);
+ 
+diff --git a/libopkg/pkg_src_list.h b/libopkg/pkg_src_list.h
+index 71a10f6..0852614 100644
+--- a/libopkg/pkg_src_list.h
++++ b/libopkg/pkg_src_list.h
+@@ -37,7 +37,6 @@ void pkg_src_list_init(pkg_src_list_t * list);
+ void pkg_src_list_deinit(pkg_src_list_t * list);
+ 
+ pkg_src_t *pkg_src_list_append(pkg_src_list_t * list, const char *name,
+-			       const char *root_dir, const char *extra_data,
+-			       int gzip);
++			       const char *root_dir, int gzip);
+ 
+ #endif
