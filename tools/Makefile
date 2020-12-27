@@ -25,7 +25,7 @@ tools-y += autoconf autoconf-archive automake bc bison cmake dosfstools
 tools-y += e2fsprogs fakeroot findutils firmware-utils flex gengetopt
 tools-y += libressl libtool lzma m4 make-ext4fs missing-macros mkimage
 tools-y += mklibs mm-macros mtd-utils mtools padjffs2 patch-image
-tools-y += patchelf pkgconf quilt squashfskit4 sstrip zip zlib zstd
+tools-y += patchelf pkgconf quilt squashfs-tools-ng sstrip zip zlib zstd
 tools-$(BUILD_B43_TOOLS) += b43-tools
 tools-$(BUILD_ISL) += isl
 tools-$(BUILD_TOOLCHAIN) += expat gmp libelf mpc mpfr
@@ -71,11 +71,11 @@ $(curdir)/qemu/compile := $(curdir)/e2fsprogs/compile $(curdir)/zlib/compile
 $(curdir)/quilt/compile := $(curdir)/autoconf/compile $(curdir)/findutils/compile
 $(curdir)/sdcc/compile := $(curdir)/bison/compile
 $(curdir)/squashfs/compile := $(curdir)/lzma-old/compile
-$(curdir)/squashfskit4/compile := $(curdir)/xz/compile $(curdir)/zlib/compile
+$(curdir)/squashfs-tools-ng/compile := $(curdir)/autoconf/compile $(curdir)/xz/compile $(curdir)/zlib/compile
 $(curdir)/zlib/compile := $(curdir)/cmake/compile
 
 ifneq ($(HOST_OS),Linux)
-  $(curdir)/squashfskit4/compile += $(curdir)/coreutils/compile
+  $(curdir)/squashfs-tools-ng/compile += $(curdir)/coreutils/compile
   tools-y += coreutils
 endif
 
